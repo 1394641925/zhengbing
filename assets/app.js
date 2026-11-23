@@ -1,4 +1,4 @@
-/* 铁血远征 · 公共交互（纯前端 parody 演示，不上传任何数据） */
+/* 铁血远征 IRON EXPEDITION · 公共交互 */
 (function(){
   var TB = window.TB || {};
 
@@ -21,16 +21,17 @@
   /* ---- 岗位渲染 / 筛选 ---- */
   window.renderJobs=function(cat){
     var box=document.getElementById('jobGrid');if(!box||!TB.JOBS)return;
-    cat=cat||'全部机会';
-    var list=cat==='全部机会'?TB.JOBS:TB.JOBS.filter(function(j){return j.cat===cat});
+    cat=cat||'全部岗位';
+    var list=cat==='全部岗位'?TB.JOBS:TB.JOBS.filter(function(j){return j.cat===cat});
     box.innerHTML=list.map(function(j){
       return '<article class="job">'+
-        '<div class="top"><span class="corner">'+j.tag+'</span>'+j.icon+'</div>'+
+        '<div class="top"><img src="assets/images/'+j.img+'" alt="'+j.name+'" loading="lazy"><span class="corner">'+j.tag+'</span><span class="code">'+j.code+'</span></div>'+
         '<div class="body"><h4>'+j.name+'</h4>'+
         '<div class="desc">'+j.desc+'</div>'+
+        '<div class="req"><b>任职要求：</b>'+j.req+'</div>'+
         '<div class="pay"><b>'+j.pay+'</b><span>'+j.unit+'</span></div>'+
         '<div class="meta">'+j.meta+'</div>'+
-        '<div class="foot"><a href="enlist.html?job='+j.id+'" class="btn btn-danger btn-sm">我要报名</a></div>'+
+        '<div class="foot"><a href="enlist.html?job='+j.id+'" class="btn btn-danger btn-sm">申请该岗位</a></div>'+
         '</div></article>';
     }).join('');
   };
@@ -44,7 +45,7 @@
       var bs=box.querySelectorAll('button');for(var i=0;i<bs.length;i++)bs[i].classList.remove('on');
       e.target.classList.add('on');renderJobs(e.target.getAttribute('data-cat'));
     });
-    renderJobs('全部机会');
+    renderJobs('全部岗位');
   };
 
   /* ---- 待遇对比表 ---- */
@@ -63,10 +64,9 @@
     }).join('');
   };
 
-  /* ---- 报名表单（纯演示） ---- */
+  /* ---- 报名表单 ---- */
   window.initEnlist=function(){
     var form=document.getElementById('enlistForm');if(!form)return;
-    // 从 URL 带 job 参数预选
     var params=new URLSearchParams(location.search), job=params.get('job');
     var sel=document.getElementById('fJob');
     if(sel&&job){for(var i=0;i<sel.options.length;i++){if(sel.options[i].value===job){sel.selectedIndex=i;break}}}
@@ -81,28 +81,28 @@
         if(err)err.classList.toggle('on',bad);
         if(bad)ok=false;
       }
-      if(!ok){tbToast('还有必填项没填哦');return}
-      // 演示：不上传任何数据，生成虚构编号
+      if(!ok){tbToast('还有必填项未完成，请检查后提交');return}
       var no='ZB-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.floor(Math.random()*900000+100000);
-      sessionStorage.setItem('tb_demo_no',no);
-      try{sessionStorage.setItem('tb_demo_name',form.querySelector('[name=name]').value)}catch(e){}
+      sessionStorage.setItem('tb_apply_no',no);
+      try{sessionStorage.setItem('tb_apply_name',form.querySelector('[name=name]').value)}catch(e){}
       location.href='success.html';
     });
   };
-  window.showDemoNo=function(){
-    var el=document.getElementById('demoNo');if(!el)return;
-    el.textContent=sessionStorage.getItem('tb_demo_no')||'ZB-DEMO-000000';
+  window.showApplyNo=function(){
+    var el=document.getElementById('applyNo');if(!el)return;
+    el.textContent=sessionStorage.getItem('tb_apply_no')||'ZB-20260101-000000';
+    var n=document.getElementById('applyName');
+    if(n){var nm=sessionStorage.getItem('tb_apply_name');if(nm)n.textContent=nm}
   };
 
-  /* ---- AI 招募顾问（本地规则演示） ---- */
+  /* ---- AI 招募顾问（本地规则应答） ---- */
   window.initAgent=function(){
     var log=document.getElementById('chatLog');if(!log)return;
     var input=document.getElementById('msgInput'), sendBtn=document.getElementById('sendBtn');
-    function addMsg(text,who,html){
+    function addMsg(text,who){
       var d=document.createElement('div');d.className='msg'+(who==='me'?' me':'');
       var av=document.createElement('div');av.className='av';av.textContent=who==='me'?'我':'征';
-      var bub=document.createElement('div');bub.className='bub';
-      if(html)bub.innerHTML=text;else bub.textContent=text;
+      var bub=document.createElement('div');bub.className='bub';bub.innerHTML=text;
       d.appendChild(av);d.appendChild(bub);log.appendChild(d);log.scrollTop=log.scrollHeight;return bub;
     }
     function typing(){
@@ -110,25 +110,28 @@
       d.innerHTML='<div class="av">征</div><div class="bub"><span class="typing"><i></i><i></i><i></i></span></div>';
       log.appendChild(d);log.scrollTop=log.scrollHeight;return d;
     }
-    function reply(text,html){var t=typing();setTimeout(function(){t.remove();addMsg(text,'ai',html)},520+Math.random()*380)}
-    setTimeout(function(){addMsg('您好！我是铁血远征的招募顾问「老征」。想了解待遇、战场机会还是报名流程？随便问——反正都是演示，说说无妨。','ai')},280);
+    function reply(text){var t=typing();setTimeout(function(){t.remove();addMsg(text,'ai')},520+Math.random()*380)}
+    setTimeout(function(){addMsg('您好，我是铁血远征的招募顾问。您可以咨询<b>岗位要求</b>、<b>薪资待遇</b>、<b>派遣流程</b>或<b>保险保障</b>，请问想了解哪方面？','ai')},280);
     function respond(q){
-      if(/待遇|工资|薪资|月薪|多少钱|钱|收入|签字费/.test(q)){
-        reply('待遇这块我们主打一个「数字大得离谱」：月薪 1.8–6 万，签约就发 3–30 万安家费，六险一金 + 顶格意外险，吃住装备全包。具体可以看「待遇详解」页的对比表——当然，全是虚构演示，别太当真。');return;
+      if(/待遇|工资|薪资|月薪|多少钱|钱|收入|签字费|签约金/.test(q)){
+        reply('薪酬由基础月薪、海外津贴与任务奖金三部分构成。按岗位与职级，综合月薪大致在 <b>2.2 万至 6 万</b> 区间，签约另有安家补贴。六险一金与高额意外险由公司承担。具体可查看「待遇详解」页的职级对比表。');return;
       }
-      if(/战场|岗位|机会|前线|作战|危险|打仗|去哪/.test(q)){
-        reply('机会多得很：前线突击、精确支援、空中机动、战地医疗、通信情报、后勤保障……前台岗位卡上写着「月薪 + 风险补贴」。危险指数我们也老实标了，但记住——每一场「战斗」都只存在于你的浏览器里。');return;
+      if(/岗位|职位|前线|战场|去哪|做什么|危险|风险/.test(q)){
+        reply('目前开放三类岗位：<b>行动岗位</b>（前线安保、精确支援、空中机动）、<b>技术支持</b>（战地医疗、通信情报、工作犬训导）与<b>后勤保障</b>（后勤主管、营地运营、装备维护）。每类岗位的职责与任职要求都写在「战场机会」页。');return;
       }
-      if(/报名|流程|怎么加入|怎么弄|步骤|签约/.test(q)){
-        reply('流程五步走：提交意向 → 初步沟通 → 确认档位 → 签署合同 → 整装出发。报名表是纯前端演示，不上传你的任何信息，随便填，提交后给个虚构编号乐一乐。');return;
+      if(/报名|流程|怎么加入|怎么弄|步骤|签约|条件|要求/.test(q)){
+        reply('招募流程五步：<b>提交申请 → 初步沟通 → 资格评估 → 签署合同 → 出发赴任</b>。基本要求为年满 21 周岁、身体健康、无犯罪记录，具体条件视岗位而定。您可以到「立即报名」页填写意向。');return;
       }
-      if(/真实|真的吗|假的|骗|靠谱吗|合法/.test(q)){
-        reply('坦白讲：本站 100% 虚构 parody，纯属恶搞演示，不是真的招募、不构成任何招聘或法律行为。所有高薪和「上战场机会」都是编剧写的段子。放心，没有陷阱，只有快乐。');return;
+      if(/保险|保障|医疗|意外|家属/.test(q)){
+        reply('保障方面：全员六险一金，另配高额意外伤害险与商业医疗险；资深及以上职级覆盖家属医疗。任务期间有医疗后送机制与应急预案，确保伤病得到及时救治。');return;
       }
-      if(/危险|死|命|风险/.test(q)){
-        reply('文案里我们诚实写了「有生命危险」——因为上战场本就是高危行为。但这是虚构演示，你的「战场」就是这块屏幕，最大的风险大概是刷太久忘了时间。');return;
+      if(/培训|训练/.test(q)){
+        reply('上岗前会完成系统的岗前培训，包括安全规程、急救技能、装备使用与任务区域情况熟悉。技术岗位另有专项训练与资格复核，确保每位队员能够胜任岗位。');return;
       }
-      reply('这个我暂时没编好台词～你可以问我待遇、战场机会、报名流程，或者直接问「这是真的吗」。记住：本站纯属虚构演示，仅供娱乐。');
+      if(/真实|真的吗|假的|骗|靠谱|合法|公司/.test(q)){
+        reply('铁血远征是一家提供海外安全服务的机构，本网站是其人员招募信息展示页。您可以重点看三处：<b>岗位说明书</b>、<b>待遇职级表</b>与<b>常见问题</b>，信息都写得比较具体。若有进一步意向，按流程提交申请即可。');return;
+      }
+      reply('这个问题我暂时没有准备到。您可以问我<b>薪资待遇</b>、<b>岗位分类</b>、<b>报名流程</b>、<b>保险保障</b>或<b>培训安排</b>，我来为您说明。');
     }
     function send(){var v=input.value.trim();if(!v)return;addMsg(v,'me');input.value='';respond(v)}
     if(sendBtn)sendBtn.addEventListener('click',send);
@@ -143,6 +146,6 @@
     renderFaq();
     initEnlist();
     initAgent();
-    if(typeof showDemoNo==='function') showDemoNo();
+    if(typeof showApplyNo==='function') showApplyNo();
   };
 })();
